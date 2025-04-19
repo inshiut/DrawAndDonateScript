@@ -1,40 +1,81 @@
--- Script para Defesa Automática de Bola com Precisão
-
+-- Definir o jogador e o personagem
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
-local rootPart = character:WaitForChild("HumanoidRootPart")
 
--- A bola do jogo
-local ball = game.Workspace:WaitForChild("Bola")
+-- Criar o HUD
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player.PlayerGui
 
--- Distância crítica para considerar que a bola está próxima
-local defenseDistance = 5  -- Ajuste a distância conforme necessário
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 100)
+frame.Position = UDim2.new(0, 50, 0, 50)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.BackgroundTransparency = 0.5
+frame.Parent = screenGui
 
--- Função de defesa (sem movimentação, apenas bloqueio)
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(0, 280, 0, 60)
+label.Position = UDim2.new(0, 10, 0, 25)
+label.Text = "Defendendo a bola!"
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.TextSize = 24
+label.BackgroundTransparency = 1
+label.Parent = frame
+
+-- Função para bloquear a bola (simular defesa)
 local function defendBall()
-    while ball and ball.Parent do
-        -- Calcular a distância entre o jogador e a bola
-        local ballPosition = ball.Position
-        local distance = (ballPosition - rootPart.Position).magnitude
+    while true do
+        local ball = game.Workspace:FindFirstChild("Ball")
+        
+        if ball then
+            -- Calcular a distância entre o jogador e a bola
+            local ballPosition = ball.Position
+            local distance = (ballPosition - humanoidRootPart.Position).Magnitude
 
-        -- Se a bola estiver dentro da distância crítica, ativar defesa
-        if distance <= defenseDistance then
-            -- Aqui você pode adicionar a lógica de defesa precisa
-            -- Vamos assumir que existe uma função ou evento que faz a defesa
-            -- Exemplo de defesa (substitua pelo método correto para seu jogo)
-            -- Se for necessário chamar um RemoteEvent ou animar algo, coloque aqui.
-            
-            -- Exemplo simples: quando a bola está próxima, simula um bloqueio perfeito
-            print("Defendendo a bola com precisão!")
-            
-            -- Caso haja algum tipo de animação ou comando específico de defesa, ative aqui.
-            -- humanoid:PlayAnimation(defenseAnimation) ou algo similar.
+            -- Se a bola estiver próxima, bloqueia a bola
+            if distance <= 5 then
+                -- Simular defesa (aqui você pode adicionar ações específicas)
+                print("Bola defendida com sucesso!")
+                -- Exemplo: disparar um RemoteEvent ou animar o personagem
+            end
         end
-
-        wait(0.1)  -- Espera um curto período antes de verificar novamente
+        
+        wait(0.1)  -- Checar a cada 0.1 segundos
     end
 end
 
--- Iniciar a defesa
-defendBall()
+-- Função para ativar e desativar a defesa
+local isDefending = false
+
+local function toggleDefense()
+    isDefending = not isDefending
+    if isDefending then
+        print("Defesa ativada!")
+        defendBall()  -- Iniciar a defesa
+    else
+        print("Defesa desativada!")
+        -- Se necessário, parar a defesa aqui
+    end
+end
+
+-- Botão para ativar/desativar defesa
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 150, 0, 50)
+toggleButton.Position = UDim2.new(0, 50, 0, 160)
+toggleButton.Text = "Ativar Defesa"
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Parent = screenGui
+
+toggleButton.MouseButton1Click:Connect(function()
+    toggleDefense()  -- Alterna entre ativar e desativar
+    if isDefending then
+        toggleButton.Text = "Desativar Defesa"
+    else
+        toggleButton.Text = "Ativar Defesa"
+    end
+end)
+
+print("HUD e defesa carregados com sucesso!")
