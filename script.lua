@@ -4,6 +4,13 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
 
+-- Função para manter o HUD visível mesmo após a morte
+player.CharacterAdded:Connect(function(char)
+    character = char
+    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoid = character:WaitForChild("Humanoid")
+end)
+
 -- Criar o HUD
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player.PlayerGui
@@ -66,16 +73,5 @@ toggleButton.Size = UDim2.new(0, 150, 0, 50)
 toggleButton.Position = UDim2.new(0, 50, 0, 160)
 toggleButton.Text = "Ativar Defesa"
 toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleButton.Parent = screenGui
-
-toggleButton.MouseButton1Click:Connect(function()
-    toggleDefense()  -- Alterna entre ativar e desativar
-    if isDefending then
-        toggleButton.Text = "Desativar Defesa"
-    else
-        toggleButton.Text = "Ativar Defesa"
-    end
-end)
-
-print("HUD e defesa carregados com sucesso!")
+toggleButton.TextColor3 = Color3.fromRGB(255, 255,
+    
