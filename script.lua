@@ -1,77 +1,74 @@
-local decalID = "96792002723138"  -- ID do Decal que você obteve após o upload
+-- Pixel Art: Coração 8x8 (1 = desenhar, 0 = ignorar)
+local pixelData = {
+    {0,1,0,0,0,0,1,0},
+    {1,1,1,0,0,1,1,1},
+    {1,1,1,1,1,1,1,1},
+    {1,1,1,1,1,1,1,1},
+    {0,1,1,1,1,1,1,0},
+    {0,0,1,1,1,1,0,0},
+    {0,0,0,1,1,0,0,0},
+    {0,0,0,0,1,0,0,0}
+}
 
--- Criar o HUD
-local screenGui = Instance.new("ScreenGui")
-screenGui.ResetOnSpawn = false
-screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+-- Função para pintar pixels
+local function paintPixel(x, y)
+    local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") or game:GetService("ReplicatedStorage")
+    local drawFunc = remotes:FindFirstChild("DrawPixel") or remotes:FindFirstChild("PaintPixel")
 
--- Criar o quadro do HUD
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 200)
-frame.Position = UDim2.new(0, 50, 0, 50)
-frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-frame.BackgroundTransparency = 0.3
-frame.BorderSizePixel = 0
-frame.Parent = screenGui
-
--- Texto do HUD
-local label = Instance.new("TextLabel")
-label.Size = UDim2.new(1, -20, 0, 50)
-label.Position = UDim2.new(0, 10, 0, 10)
-label.Text = "Draw and Donate Helper"
-label.TextColor3 = Color3.fromRGB(255, 255, 255)
-label.TextSize = 24
-label.BackgroundTransparency = 1
-label.Font = Enum.Font.SourceSansBold
-label.Parent = frame
-
--- Botão de desenhar automático
-local drawButton = Instance.new("TextButton")
-drawButton.Size = UDim2.new(0, 260, 0, 40)
-drawButton.Position = UDim2.new(0, 20, 0, 70)
-drawButton.Text = "Desenhar Imagem"
-drawButton.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
-drawButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-drawButton.TextSize = 18
-drawButton.Font = Enum.Font.SourceSansBold
-drawButton.Parent = frame
-
--- Função para desenhar (spawnar o decal)
-local function desenharImagem()
-	local part = Instance.new("Part")
-	part.Size = Vector3.new(4, 1, 4)
-	part.Position = Vector3.new(0, 10, 0)
-	part.Anchored = true
-	part.Parent = game.Workspace
-
-	local decal = Instance.new("Decal")
-	decal.Texture = "rbxassetid://" .. decalID
-	decal.Parent = part
+    if drawFunc then
+        drawFunc:FireServer(x, y, Color3.fromRGB(255, 0, 0)) -- Vermelho
+    else
+        warn("Não foi possível encontrar a função de desenho.")
+    end
 end
 
-drawButton.MouseButton1Click:Connect(desenharImagem)
+-- Desenhar a imagem no canvas
+local function drawImage()
+    for y = 1, #pixelData do
+        for x = 1, #pixelData[y] do
+            if pixelData[y][x] == 1 then
+                paintPixel(x, y)
+                wait(0.01) -- Delay para evitar flood
+            end
+        end
+    end
+end
 
--- Botão de minimizar
-local minimizeButton = Instance.new("TextButton")
-minimizeButton.Size = UDim2.new(0, 260, 0, 30)
-minimizeButton.Position = UDim2.new(0, 20, 0, 130)
-minimizeButton.Text = "Minimizar HUD"
-minimizeButton.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
-minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-minimizeButton.TextSize = 16
-minimizeButton.Font = Enum.Font.SourceSansBold
-minimizeButton.Parent = frame
+-- Criar HUD
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 250, 0, 120)
+frame.Position = UDim2.new(0, 30, 0, 30)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.BackgroundTransparency = 0.3
+
+local button = Instance.new("TextButton", frame)
+button.Size = UDim2.new(1, -20, 0, 40)
+button.Position = UDim2.new(0, 10, 0, 10)
+button.Text = "Desenhar Coração"
+button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+button.TextColor3 = Color3.new(1, 1, 1)
+button.TextSize = 18
+button.MouseButton1Click:Connect(drawImage)
+
+local minimize = Instance.new("TextButton", frame)
+minimize.Size = UDim2.new(1, -20, 0, 30)
+minimize.Position = UDim2.new(0, 10, 0, 60)
+minimize.Text = "Minimizar HUD"
+minimize.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+minimize.TextColor3 = Color3.new(1, 1, 1)
+minimize.TextSize = 16
 
 local minimized = false
-
-minimizeButton.MouseButton1Click:Connect(function()
+minimize.MouseButton1Click:Connect(function()
 	minimized = not minimized
 	for _, child in pairs(frame:GetChildren()) do
-		if child ~= minimizeButton then
+		if child ~= minimize then
 			child.Visible = not minimized
 		end
 	end
-	minimizeButton.Text = minimized and "Restaurar HUD" or "Minimizar HUD"
+	minimize.Text = minimized and "Restaurar HUD" or "Minimizar HUD"
 end)
-
-
