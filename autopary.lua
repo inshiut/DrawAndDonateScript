@@ -1,71 +1,80 @@
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-local ParryEnabled = false
-local GuiName = "AutoParryHUD"
+--[[ Auto Parry Script for Pilgrammed (Mobile Friendly) ]]--
 
--- Função para criar o HUD
-local function createHUD()
-    local gui = Instance.new("ScreenGui")
-    gui.Name = GuiName
-    gui.ResetOnSpawn = false
-    gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+-- CONFIG
+local ParryDistance = 12         -- Distância para ativar parry
+local ParryDelay = 0.15          -- Delay antes do parry
+local ProjectilSpeedCheck = true
 
-    local toggle = Instance.new("TextButton")
-    toggle.Size = UDim2.new(0, 140, 0, 40)
-    toggle.Position = UDim2.new(0, 20, 0, 100)
-    toggle.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggle.Text = "Auto Parry: OFF"
-    toggle.Font = Enum.Font.Gotham
-    toggle.TextSize = 18
-    toggle.Parent = gui
+-- UI Setup
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "AutoParryHUD"
 
-    toggle.MouseButton1Click:Connect(function()
-        ParryEnabled = not ParryEnabled
-        toggle.Text = ParryEnabled and "Auto Parry: ON" or "Auto Parry: OFF"
-        toggle.BackgroundColor3 = ParryEnabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(30, 30, 30)
-    end)
-end
+local ToggleButton = Instance.new("TextButton", ScreenGui)
+ToggleButton.Size = UDim2.new(0, 140, 0, 40)
+ToggleButton.Position = UDim2.new(0, 10, 0, 10)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Text = "Auto Parry: ON"
+ToggleButton.TextScaled = true
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.BorderSizePixel = 0
+ToggleButton.BackgroundTransparency = 0.2
+ToggleButton.Visible = true
+ToggleButton.Active = true
+ToggleButton.Draggable = true
 
--- Recriar HUD após respawn
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    if not LocalPlayer.PlayerGui:FindFirstChild(GuiName) then
-        createHUD()
-    end
+local autoParryEnabled = true
+ToggleButton.MouseButton1Click:Connect(function()
+    autoParryEnabled = not autoParryEnabled
+    ToggleButton.Text = "Auto Parry: " .. (autoParryEnabled and "ON" or "OFF")
 end)
 
--- Criar HUD no início
-if not LocalPlayer.PlayerGui:FindFirstChild(GuiName) then
-    createHUD()
+-- Parry Function
+local function performParry()
+    local char = game.Players.LocalPlayer.Character
+    if char then
+        game:GetService("VirtualInputManager"):SendKeyEvent(true, "F", false, game)
+        task.wait(0.1)
+        game:GetService("VirtualInputManager"):SendKeyEvent(false, "F", false, game)
+    end
 end
 
--- Função para detectar e dar parry
-local function tryParry()
-    if not ParryEnabled then return end
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+-- Enemy & Projectile Detection
+local function monitorCombat()
+    local Players = game:GetService("Players")
+    local lp = Players.LocalPlayer
+    local RunService = game:GetService("RunService")
 
-    local root = char.HumanoidRootPart
-    local enemies = workspace:GetDescendants()
+    RunService.Heartbeat:Connect(function()
+        if not autoParryEnabled then return end
 
-    for _, obj in pairs(enemies) do
-        if obj:IsA("BasePart") and obj.Name == "Projectile" and obj:FindFirstAncestorWhichIsA("Model") ~= char then
-            local dist = (obj.Position - root.Position).Magnitude
-            if dist < 15 then
-                -- Aqui você pode ajustar a distância e timing
-                local input = game:GetService("ReplicatedStorage"):FindFirstChild("Parry")
-                if input then
-                    input:FireServer()
-                    print("Parry em projétil detectado!")
+        local char = lp.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        local humRoot = char.HumanoidRootPart
+
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj ~= char then
+                local enemyHRP = obj:FindFirstChild("HumanoidRootPart")
+                if enemyHRP and (enemyHRP.Position - humRoot.Position).Magnitude <= ParryDistance then
+                    performParry()
+                end
+            elseif ProjectilSpeedCheck and obj:IsA("BasePart") and obj.Velocity.Magnitude > 20 and obj.Size.Magnitude < 10 then
+                if (obj.Position - humRoot.Position).Magnitude <= ParryDistance then
+                    performParry()
                 end
             end
         end
-    end
+    end)
 end
 
--- Loop do auto parry
-RunService.RenderStepped:Connect(function()
-    pcall(tryParry)
+-- Respawn protection
+game.Players.LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    if not ScreenGui or not ScreenGui.Parent then
+        ScreenGui.Parent = game.CoreGui
+    end
 end)
+
+-- Start
+task.spawn(monitorCombat)
+print("[Auto Parry] Script loaded.")
