@@ -1,61 +1,55 @@
--- AUTOPARRY para Roblox "Parry" - Suporte para Celular e PC
--- HUD: Botão para ativar/desativar
+--[[
+Pilgrammed Autoparry Script (Mobile + HUD)
+Feito por Copilot, adaptável para desktop e mobile.
+Troque o nome do RemoteEvent se necessário!
+]]
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local RunService = game:GetService("RunService")
+local lp = game:GetService("Players").LocalPlayer
+local rs = game:GetService("ReplicatedStorage")
 
--- HUD
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AutoParryHUD"
-ScreenGui.Parent = game:GetService("CoreGui")
+-- Nome do RemoteEvent de parry (confira pelo Explorer/Synapse, etc)
+local PARRY_REMOTE_NAME = "ParryRemote" -- Edite para o correto!
 
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0, 140, 0, 50)
-ToggleButton.Position = UDim2.new(0, 15, 0, 15)
-ToggleButton.Text = "AutoParry: OFF"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
-ToggleButton.Font = Enum.Font.SourceSansBold
-ToggleButton.TextSize = 24
-ToggleButton.Parent = ScreenGui
+local enabled = false
 
-local autoparryEnabled = false
+-- HUD: botão para ativar/desativar
+local gui = Instance.new("ScreenGui")
+gui.Name = "AutoParryHUD"
+gui.Parent = game:GetService("CoreGui")
 
-ToggleButton.MouseButton1Click:Connect(function()
-    autoparryEnabled = not autoparryEnabled
-    ToggleButton.Text = "AutoParry: " .. (autoparryEnabled and "ON" or "OFF")
-    ToggleButton.BackgroundColor3 = autoparryEnabled and Color3.fromRGB(50,200,50) or Color3.fromRGB(40,40,40)
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(0, 140, 0, 48)
+btn.Position = UDim2.new(0.5, -70, 0.85, 0)
+btn.BackgroundColor3 = Color3.fromRGB(60, 200, 80)
+btn.TextColor3 = Color3.new(1,1,1)
+btn.Text = "AutoParry: OFF"
+btn.Font = Enum.Font.GothamBold
+btn.TextScaled = true
+btn.Parent = gui
+
+btn.MouseButton1Click:Connect(function()
+    enabled = not enabled
+    btn.Text = enabled and "AutoParry: ON" or "AutoParry: OFF"
+    btn.BackgroundColor3 = enabled and Color3.fromRGB(200,40,40) or Color3.fromRGB(60,200,80)
 end)
 
--- Função para tentar parry
-local function tryParry()
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+-- Detectar ataque e parry automático
+local function parryCheck()
+    local char = lp.Character or lp.CharacterAdded:Wait()
+    local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+    if not humanoid then return end
 
-    -- Detecta ataques próximos (por nome genérico)
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("Part") and (obj.Name:lower():find("attack") or obj.Name:lower():find("ball")) then
-            local dist = (char.HumanoidRootPart.Position - obj.Position).Magnitude
-            if dist < 12 then -- Ajuste o alcance conforme necessário
-                -- PC: Simula pressionar tecla F (se RemoteEvent existir)
-                local parryRemote = char:FindFirstChild("Parry") or workspace:FindFirstChild("Parry")
-                if parryRemote and parryRemote:IsA("RemoteEvent") then
-                    parryRemote:FireServer()
-                end
-                -- Celular: Procura botão F virtual e simula clique
-                for _, gui in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
-                    if gui:IsA("TextButton") and (gui.Text == "F" or gui.Name:lower():find("parry")) then
-                        gui:Activate()
-                    end
-                end
+    humanoid.HealthChanged:Connect(function(newHealth)
+        if enabled and newHealth < humanoid.Health then
+            local remote = rs:FindFirstChild(PARRY_REMOTE_NAME)
+            if remote then
+                remote:FireServer()
             end
         end
-    end
+    end)
 end
 
-RunService.RenderStepped:Connect(function()
-    if autoparryEnabled then
-        pcall(tryParry)
-    end
-end)
+parryCheck()
+lp.CharacterAdded:Connect(parryCheck)
+
+-- Dica: se Pilgrammed usar outro sinal (flag/valor/efeito), monitore também!
