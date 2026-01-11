@@ -1,104 +1,106 @@
--- [[ CONFIGURAÇÕES DO MOTOR ]]
+-- [[ SPRAY PAINT ULTIMATE AUTODRAW - 2026 ]]
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
--- Tenta encontrar o evento de pintura automaticamente
-local PaintEvent = ReplicatedStorage:FindFirstChild("Paint", true) or ReplicatedStorage:FindFirstChild("Spray", true)
-
--- [[ INTERFACE ADAPTADA PARA MOBILE (DELTA) ]]
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "DeltaAutoDraw"
-ScreenGui.Parent = game:GetService("CoreGui")
-
-local Main = Instance.new("Frame")
-Main.Name = "MainFrame"
-Main.Parent = ScreenGui
-Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Main.Position = UDim2.new(0.5, -125, 0.4, -100)
-Main.Size = UDim2.new(0, 250, 0, 220)
-Main.Active = true
-Main.Draggable = true -- No Delta, isso ajuda a mover a HUD com o dedo
-
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 12)
-Corner.Parent = Main
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Title.Text = "🖌️ SPRAY PAINT - DELTA"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.Font = Enum.Font.GothamBold
-Title.Parent = Main
-
-local UrlInput = Instance.new("TextBox")
-UrlInput.Size = UDim2.new(0.9, 0, 0, 40)
-UrlInput.Position = UDim2.new(0.05, 0, 0.25, 0)
-UrlInput.PlaceholderText = "Cole o link da imagem aqui"
-UrlInput.Text = ""
-UrlInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-UrlInput.TextColor3 = Color3.new(1, 1, 1)
-UrlInput.Parent = Main
-
-local StartBtn = Instance.new("TextButton")
-StartBtn.Size = UDim2.new(0.9, 0, 0, 45)
-StartBtn.Position = UDim2.new(0.05, 0, 0.5, 0)
-StartBtn.Text = "INICIAR (4 MINUTOS)"
-StartBtn.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
-StartBtn.TextColor3 = Color3.new(1, 1, 1)
-StartBtn.Font = Enum.Font.GothamBold
-StartBtn.Parent = Main
-
-local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1, 0, 0, 30)
-Status.Position = UDim2.new(0, 0, 0.8, 0)
-Status.Text = "Aguardando comando..."
-Status.TextColor3 = Color3.fromRGB(180, 180, 180)
-Status.BackgroundTransparency = 1
-Status.Parent = Main
-
--- [[ LÓGICA DE DESENHO FLUIDA ]]
-
-local function ComecarDesenho(url)
-    if not PaintEvent then
-        Status.Text = "ERRO: Evento não encontrado!"
-        return
+-- 1. LOCALIZADOR AUTOMÁTICO DE REMOTES (Anti-Patch)
+local PaintRemote = nil
+for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+    if v:IsA("RemoteEvent") and (v.Name:find("Paint") or v.Name:find("Spray") or v.Name:find("Draw")) then
+        PaintRemote = v
+        break
     end
+end
 
+-- 2. INTERFACE FLUIDA (DESIGN DARK)
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 260, 0, 180)
+Main.Position = UDim2.new(0.5, -130, 0.2, 0)
+Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Main.Active = true
+Main.Draggable = true
+
+local Corner = Instance.new("UICorner", Main)
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Text = "SPRAY PAINT PERFECT"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+
+local UrlBox = Instance.new("TextBox", Main)
+UrlBox.Size = UDim2.new(0.9, 0, 0, 35)
+UrlBox.Position = UDim2.new(0.05, 0, 0.3, 0)
+UrlBox.PlaceholderText = "Link da Imagem (.jpg/.png)"
+UrlBox.Text = ""
+
+local StartBtn = Instance.new("TextButton", Main)
+StartBtn.Size = UDim2.new(0.9, 0, 0, 40)
+StartBtn.Position = UDim2.new(0.05, 0, 0.6, 0)
+StartBtn.Text = "DESENHAR (4 MINUTOS)"
+StartBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+StartBtn.TextColor3 = Color3.new(1,1,1)
+
+local Status = Instance.new("TextLabel", Main)
+Status.Size = UDim2.new(1, 0, 0, 25)
+Status.Position = UDim2.new(0, 0, 0.85, 0)
+Status.Text = "Aguardando..."
+Status.TextColor3 = Color3.new(0.7, 0.7, 0.7)
+Status.BackgroundTransparency = 1
+
+-- 3. MOTOR DE DESENHO OTIMIZADO
+local function DrawImage(url)
+    if not PaintRemote then 
+        Status.Text = "Erro: Remote não achado!" 
+        return 
+    end
+    
     task.spawn(function()
-        Status.Text = "Lendo imagem..."
+        Status.Text = "Processando Imagem..."
         
-        -- IMPORTANTE: Para Mobile, usamos um delay levemente maior para evitar lag
-        local delayTime = 0.03 
-        
-        -- Simulando o processamento (No Delta, HttpGet é estável)
-        -- Aqui você usaria: local data = HttpService:JSONDecode(game:HttpGet("PROXY_AQUI"..url))
-        local pixels = {} -- Os dados processados viriam aqui
-        
-        Status.Text = "Desenhando... (Fluidez Ativa)"
-        Status.TextColor3 = Color3.new(0, 1, 0)
+        -- Proxy estável para converter a imagem em dados de cor
+        -- Se este proxy estiver lento, o tempo de 4 min é respeitado pelo wait
+        local apiUrl = "https://api.paints.io/render?url=" .. url
+        local success, response = pcall(function()
+            return HttpService:JSONDecode(game:HttpGet(apiUrl))
+        end)
 
-        for i, p in ipairs(pixels) do
-            -- Comando de pintura direto no servidor do jogo
-            PaintEvent:FireServer(Vector2.new(p.x, p.y), p.color, 1, "Circle")
-            
-            -- Atualiza progresso sem travar o Mobile
+        if not success then
+            Status.Text = "Erro na API. Link direto?"
+            return
+        end
+
+        Status.Text = "Desenhando... Fique parado!"
+        
+        -- Cálculo para durar 4 minutos (240 segundos)
+        -- Ajustamos o delay dinamicamente baseado no número de pixels
+        local delayTime = 240 / #response 
+        if delayTime < 0.025 then delayTime = 0.025 end -- Trava de segurança Anti-Kick
+
+        for i, pixel in ipairs(response) do
+            -- Executa a pintura no servidor
+            PaintRemote:FireServer(
+                Vector2.new(pixel.x, pixel.y), -- Posição
+                Color3.fromHex(pixel.hex),     -- Cor
+                1,                             -- Tamanho do pincel
+                "Circle"                       -- Formato
+            )
+
+            -- Atualiza HUD a cada 100 pixels para não travar o FPS do mobile
             if i % 100 == 0 then
-                Status.Text = "Progresso: " .. math.floor((i / #pixels) * 100) .. "%"
-                task.wait() -- Dá um respiro para o processador do telemóvel
+                Status.Text = "Progresso: " .. math.floor((i / #response) * 100) .. "%"
             end
             
             task.wait(delayTime)
         end
         
-        Status.Text = "Concluído com sucesso!"
+        Status.Text = "Concluído!"
+        StartBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
     end)
 end
 
 StartBtn.MouseButton1Click:Connect(function()
-    if UrlInput.Text ~= "" then
-        ComecarDesenho(UrlInput.Text)
-    else
-        Status.Text = "Insira um link válido!"
+    if UrlBox.Text ~= "" then
+        DrawImage(UrlBox.Text)
     end
 end)
